@@ -7,6 +7,7 @@ import { QuranTextAPI } from '../apis/quran-text-api';
 import { Recitation } from '../utils/recitator';
 import { UIManager } from '../views/ui-manager';
 import { QuranAudioAPI } from '../apis/quran-audio-api';
+import fs from 'fs';
 
 export enum ReciteCommandOptions
 {
@@ -178,8 +179,11 @@ export class Quran extends Subcommand {
 
     public async updateRecitatorInteraction(interaction : Command.ChatInputCommandInteraction, recitation: Recitation)
     {
-        const file = new AttachmentBuilder('./assets/reciters/' + recitation.reciterId + '.jpg');
+        let imagePath = './assets/reciters/' + recitation.reciterId + '.jpg';
+        if(!fs.existsSync(imagePath)) imagePath = "./assets/no-image.jpg";
+        const file = new AttachmentBuilder(imagePath);
         file.setName('reciter.jpg');
+
         const recitationEmbed = UIManager.getRecitationEmbed(recitation);
         const actionRow = UIManager.getRecitatorActionRow();
         await interaction.editReply({content: "", embeds: [recitationEmbed], components: [actionRow], files: [file]});

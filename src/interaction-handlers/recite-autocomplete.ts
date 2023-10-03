@@ -20,7 +20,7 @@ export class ReciteAutocomplete extends InteractionHandler {
   private async initFuses()
   {
     this.chaptersFuse = new Fuse(await QuranTextAPI.listSurahs(), { threshold: 0.3, keys: ['id', 'name_simple', 'name_arabic', 'translated_name.name'] });
-    this.recitersFuse = new Fuse(await QuranAudioAPI.listReciters(), {threshold: 0.3, keys: ['name', ['moshaf', 'surah_list']]});
+    this.recitersFuse = new Fuse(await QuranAudioAPI.listReciters(), {threshold: 0.1, keys: ['name', ['moshaf', 'surah_list']]});
   }
 
   public override async run(interaction: AutocompleteInteraction, result: InteractionHandler.ParseResult<this>) {

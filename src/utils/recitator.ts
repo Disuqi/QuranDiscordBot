@@ -39,7 +39,7 @@ export class Recitator
         this._audioPlayer = createAudioPlayer();
 
         this._queue = [];
-        this._queueIndex = null;
+        this._queueIndex = -1;
         this._guildId = voiceState.guild.id;
         this.onRecitationChanged = onRecitationChanged;
         this.onDestroy = onDestroy;
@@ -105,7 +105,10 @@ export class Recitator
                 if(this._repeat)
                     this._queueIndex = 0;
                 else
+                {
+                    this.stop();
                     return;
+                }
             }
             const track = this._queue[this._queueIndex]
             this.recite(track);
@@ -136,6 +139,7 @@ export class Recitator
     {
         this._audioPlayer.stop();
         const connection = getVoiceConnection(this._guildId);
+        connection.disconnect();
         connection.destroy();
         this.onDestroy(this._guildId);
     }
