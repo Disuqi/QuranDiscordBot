@@ -1,0 +1,57 @@
+import axios from "axios";
+
+export class QuranAudioAPI
+{
+    static async listReciters() : Promise<Reciter[]>
+    {
+        const response = await axios.get("https://mp3quran.net/api/v3/reciters", {params: {language: 'eng'}});
+        return response.data['reciters'] as Reciter[];
+    }
+
+    static async getSurahAudio(surah : number, reciterId : number) : Promise<string>
+    {
+        const response = await axios.get("https://mp3quran.net/api/v3/reciters", {params: {language: 'eng', reciter: reciterId, sura: surah}});
+        const reciter = response.data['reciters'][0] as Reciter;
+        const server = reciter.moshaf[reciter.moshaf.length - 1].server;
+        const surahUrl = surah.toString().padStart(3, '0') + ".mp3";
+        return server + surahUrl;
+    }
+
+    static async getReciter(reciter: number) : Promise<Reciter>
+    {
+        const response = await axios.get("https://mp3quran.net/api/v3/reciters", {params: {language: 'eng', reciter: reciter}});
+        return response.data['reciters'][0] as Reciter;
+    }
+
+    static async listRecitersFromSurahAndName(surah: number, name: string) : Promise<Reciter[]>
+    {
+        const response = await axios.get("https://mp3quran.net/api/v3/reciters", {params: {language: 'eng', sura: surah}});
+        const reciters = response.data['reciters'] as Reciter[];
+        return reciters.filter(reciter => reciter.name.toLowerCase().includes(name.toLowerCase()));
+    }
+}
+
+export type Reciter =
+{
+    id: number;
+    name: string;
+    letter: 'I',
+    moshaf: [Moshaf]
+}
+
+export type Moshaf = 
+{
+    id: number;
+    name: string;
+    server: string;
+    surah_total: number;
+    moshaf_type: number;
+    surah_list: string;
+}
+
+// async function main() 
+// {
+//     const response = await QuranAudioAPI.listReciters();
+//     console.log(response);
+// }
+// main();
