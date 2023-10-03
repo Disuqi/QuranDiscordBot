@@ -15,7 +15,8 @@ export enum ReciteCommandOptions
 }
 
 export class Quran extends Subcommand {
-    static COMMAND_ID: string = "1152024046247088148";
+    static readonly COMMAND_ID: string = "1152024046247088148";
+    static readonly MAX_OPTION_CHOICES : number = 25;
 
     public constructor(context: Subcommand.Context, options: Subcommand.Options) {
         super(context, { ...options,

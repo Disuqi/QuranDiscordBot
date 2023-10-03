@@ -3,10 +3,6 @@ import { NumberLiteralType } from 'typescript';
 import { Quran } from '../commands/quran';
 
 export class QuranTextAPI {
-    static readonly ayat = 
-    {
-        
-    }
     static quran_com: string = 'https://api.quran.com/api/v4';
 
     static async getSurahInfo(surah: number) : Promise<SurahInfo>

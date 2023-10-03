@@ -23,11 +23,10 @@ export class QuranAudioAPI
         return response.data['reciters'][0] as Reciter;
     }
 
-    static async listRecitersFromSurahAndName(surah: number, name: string) : Promise<Reciter[]>
+    static async listRecitersWithSurah(surah: number) : Promise<Reciter[]>
     {
         const response = await axios.get("https://mp3quran.net/api/v3/reciters", {params: {language: 'eng', sura: surah}});
-        const reciters = response.data['reciters'] as Reciter[];
-        return reciters.filter(reciter => reciter.name.toLowerCase().includes(name.toLowerCase()));
+        return response.data['reciters'] as Reciter[];
     }
 }
 
@@ -52,6 +51,6 @@ export type Moshaf =
 // async function main() 
 // {
 //     const response = await QuranAudioAPI.listReciters();
-//     console.log(response);
+//     console.log(response[0]);
 // }
 // main();
