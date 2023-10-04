@@ -27,6 +27,8 @@ export class ReciteAutocomplete extends InteractionHandler {
     return interaction.respond(result);
   }
 
+  //bug for al fatiha because there is no , in front of it
+  //also when there is nothing being typed then there is nothing to select, which is buggy
   public override async parse(interaction: AutocompleteInteraction) {
     if (interaction.commandId != Quran.COMMAND_ID) return this.none();
 
