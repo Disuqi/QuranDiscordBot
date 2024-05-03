@@ -47,10 +47,3 @@ export type Moshaf =
     moshaf_type: number;
     surah_list: string;
 }
-
-// async function main() 
-// {
-//     const response = await QuranAudioAPI.listReciters();
-//     console.log(response[0]);
-// }
-// main();

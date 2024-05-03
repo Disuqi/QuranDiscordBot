@@ -60,6 +60,12 @@ export class QuranTextAPI {
         return response.data['tafsirs'] as TranslationInfo[];
     }
 
+    static async search(query: string)
+    {
+        const response = await axios.get(`${QuranTextAPI.quran_com}/search`, {params: { q: query }});
+        return response.data;
+    }
+
     private static paramsToJson(params : QuranParams) : Record<string, any>
     {
         const json: Record<string, any> = {};

@@ -25,9 +25,10 @@ export class Quran extends Subcommand {
             description: "Recite The Holy Quran",
             subcommands: [
                 { name: 'recite', chatInputRun: 'recite', default: true},
-                { name: 'enqueue', chatInputRun: 'enqueue'},
-                { name: 'skip', chatInputRun: 'skip'},
-                { name: 'stop', chatInputRun: 'stop'}
+                { name: 'add', chatInputRun: 'add' },
+                { name: 'skip', chatInputRun: 'skip' },
+                { name: 'stop', chatInputRun: 'stop' },
+                { name: 'search', chatInputRun: 'search' }
             ]});
     }
 
@@ -54,7 +55,7 @@ export class Quran extends Subcommand {
         reciteSubCommand.addIntegerOption(reciterOption);
 
         const enqueueSubCommand = new SlashCommandSubcommandBuilder();
-        enqueueSubCommand.setName('enqueue');
+        enqueueSubCommand.setName('add');
         enqueueSubCommand.setDescription('Add a recitation to the queue');
         enqueueSubCommand.addIntegerOption(surahOption);
         enqueueSubCommand.addIntegerOption(reciterOption);
@@ -67,10 +68,15 @@ export class Quran extends Subcommand {
         stopSubCommand.setName('stop');
         stopSubCommand.setDescription('Stop the current recitation');
 
+        const searchSubCommand = new SlashCommandSubcommandBuilder();
+        searchSubCommand.setName('search');
+        searchSubCommand.setDescription('Search for an aya in the Quran');
+
         build.addSubcommand(reciteSubCommand);
         build.addSubcommand(enqueueSubCommand);
         build.addSubcommand(skipSubCommand);
         build.addSubcommand(stopSubCommand);
+        build.addSubcommand(searchSubCommand);
 
         registry.registerChatInputCommand(build, { idHints:[], guildIds: [guildId] });
     }
@@ -80,7 +86,7 @@ export class Quran extends Subcommand {
         this.updateRecitator(interaction)
     }
 
-    public async enqueue(interaction: Command.ChatInputCommandInteraction)
+    public async add(interaction: Command.ChatInputCommandInteraction)
     {
         this.updateRecitator(interaction, true)
     }
@@ -187,5 +193,10 @@ export class Quran extends Subcommand {
         const recitationEmbed = UIManager.getRecitationEmbed(recitation);
         const actionRow = UIManager.getRecitatorActionRow();
         await interaction.editReply({content: "", embeds: [recitationEmbed], components: [actionRow], files: [file]});
+    }
+
+    public async search(interaction: Command.ChatInputCommandInteraction)
+    {
+        
     }
 }

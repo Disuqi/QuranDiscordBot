@@ -91,7 +91,7 @@ export class Recitator
     }
 
     public next(index : number = -1)
-    {
+    { 
         if (index > -1)
         {
             this._queueIndex = index;
