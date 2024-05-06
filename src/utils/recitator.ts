@@ -81,11 +81,14 @@ export class Recitator
         try
         {
             const resource = createAudioResource(track.audioUrl);
+            console.log("Playing", track.audioUrl);
             this._audioPlayer.play(resource);
+            console.log("Played", track.audioUrl);
             return true;
         }
         catch (error)
         {
+            console.error("Failed to play", track.audioUrl, error);
             return false;
         }
     }

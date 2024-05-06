@@ -5,9 +5,8 @@ import { RecitatorsManager } from '../utils/manager';
 
 export class ButtonHandler extends InteractionHandler 
 {
-  public constructor(ctx: PieceContext, options: InteractionHandler.Options) {
+  public constructor(ctx) {
     super(ctx, {
-      ...options,
       interactionHandlerType: InteractionHandlerTypes.Button
     });
   }

@@ -9,9 +9,8 @@ export class ReciteAutocomplete extends InteractionHandler {
   chaptersFuse : Fuse<SurahInfo>;
   recitersFuse : Fuse<Reciter>;
 
-  public constructor(ctx: PieceContext, options: InteractionHandler.Options) {
+  public constructor(ctx) {
     super(ctx, {
-      ...options,
       interactionHandlerType: InteractionHandlerTypes.Autocomplete
     });
     this.initFuses()

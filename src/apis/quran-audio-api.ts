@@ -10,7 +10,9 @@ export class QuranAudioAPI
 
     static async getSurahAudio(surah : number, reciterId : number) : Promise<string>
     {
+        console.log("Getting audio for surah", surah, "reciter", reciterId);
         const response = await axios.get("https://mp3quran.net/api/v3/reciters", {params: {language: 'eng', reciter: reciterId, sura: surah}});
+        console.log(response.data);
         const reciter = response.data['reciters'][0] as Reciter;
         const server = reciter.moshaf[reciter.moshaf.length - 1].server;
         const surahUrl = surah.toString().padStart(3, '0') + ".mp3";

@@ -197,6 +197,6 @@ export class Quran extends Subcommand {
 
     public async search(interaction: Command.ChatInputCommandInteraction)
     {
-        
+        console.log("searching");
     }
 }
