@@ -5,6 +5,7 @@ export class QuranAudioAPI
     static async listReciters() : Promise<Reciter[]>
     {
         const response = await axios.get("https://mp3quran.net/api/v3/reciters", {params: {language: 'eng'}});
+        console.log(response.data);
         return response.data['reciters'] as Reciter[];
     }
 

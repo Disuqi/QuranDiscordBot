@@ -25,7 +25,9 @@
   "description": "Discord Bot to play the holy Quran",
   "scripts": {
     "start": "npx ts-node ./src/main.ts",
-    "watch": "npx nodemon --exec ts-node ./src/main.ts"
+    "watch": "npx nodemon --exec ts-node ./src/main.ts",
+    "quran-audio-api": "npx ts-node ./src/apis/quran-audio-api.ts",
+    "qura-text-api": "npx ts-node ./src/apis/quran-text-api.ts"
   },
   "devDependencies": {
     "nodemon": "^3.1.0",
