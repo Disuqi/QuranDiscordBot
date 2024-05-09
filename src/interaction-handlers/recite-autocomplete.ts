@@ -5,8 +5,12 @@ import Fuse from 'fuse.js';
 import { QuranAudioAPI, Reciter } from '../apis/quran-audio-api';
 import { QuranTextAPI, SurahInfo } from '../apis/quran-text-api';
 import { isNullOrUndefinedOrEmpty } from '@sapphire/utilities';
+import { MAX_OPTION_CHOICES } from '../utils/consts';
 
 export class ReciteAutocomplete extends InteractionHandler {
+  allChapters : SurahInfo[];
+  recitersPerChapter : {[key: number]: Set<Reciter> } = {};
+
   chaptersFuse : Fuse<SurahInfo>;
   recitersFuse : Fuse<Reciter>;
 
@@ -14,63 +18,83 @@ export class ReciteAutocomplete extends InteractionHandler {
     super(ctx, {
       interactionHandlerType: InteractionHandlerTypes.Autocomplete
     });
-    this.initFuses()
   }
 
-  private async initFuses()
+  public override async onLoad()
   {
-    this.chaptersFuse = new Fuse((await QuranTextAPI.listSurahs()), { threshold: 0.3, keys: ['id', 'name_simple', 'name_arabic', 'translated_name.name'] });
-    this.recitersFuse = new Fuse((await QuranAudioAPI.listReciters()), {threshold: 0.1, keys: ['name', ['moshaf', 'surah_list']]});
+    this.allChapters = await QuranTextAPI.listSurahs();
+    this.chaptersFuse = new Fuse(this.allChapters, { threshold: 0.3, keys: ['id', 'name_simple', 'name_arabic', 'translated_name.name'] });
+
+    this.allChapters.forEach(chapter => this.recitersPerChapter[chapter.id] = new Set<Reciter>());
+    const allReciters = await QuranAudioAPI.listReciters();
+    
+    allReciters.forEach(reciter => 
+      {
+        reciter.moshaf.forEach(moshaf => 
+          {
+            const moshafSuras : number[] = moshaf.surah_list.split(',').map(Number);
+            moshafSuras.forEach(surah => 
+              {
+                  this.recitersPerChapter[surah].add(reciter);
+              });
+          });
+      });
   }
 
   public override async run(interaction: AutocompleteInteraction, result: InteractionHandler.ParseResult<this>) 
   {
+    this.recitersFuse = null;
     return interaction.respond(result);
   }
 
-  //bug for al fatiha because there is no , in front of it
   //also other surahs dont work for some reason, the reciters search is not working as expected
-  //also when there is nothing being typed then there is nothing to select, which is buggy
 
-  // could do a dictionary with different fuse for each surah
-  // or format reciters before returning so they only return with murattal
-  // also organize this code below into functions
   // if nothing is types either put some popular surahs
   // or find the users latest uses
   // you could connect this to mondo db database
   public override async parse(interaction: AutocompleteInteraction)
   {
-    if (interaction.commandId != Quran.COMMAND_ID) return this.none();
+    switch (interaction.commandId)
+    {
+      case Quran.COMMAND_ID:
+        return await this.handleQuranCommand(interaction);
+      default:
+        return this.none();
+    }
+  }
 
+  private async handleQuranCommand(interaction: AutocompleteInteraction)
+  {
     const focusedOption = interaction.options.getFocused(true);
     const options : APIApplicationCommandOptionChoice[] = [];
     switch(focusedOption.name)
     {
       case ReciteCommandOptions.Surah:
         if(isNullOrUndefinedOrEmpty(focusedOption.value))
+        {
+          for(let i = 0; i < MAX_OPTION_CHOICES; i++)
           {
-            const suras = await QuranTextAPI.listSurahs();
-            for(let i = 0; i < 25; i++)
-            {
-              const surah = suras[i];
-              options.push({name: surah.name_simple, value: surah.id});
-            }
-            break;
+            const surah = this.allChapters[i];
+            options.push({name: surah.name_simple, value: surah.id});
           }
+          break;
+        }
         const chapters = this.chaptersFuse.search(focusedOption.value);
 
         for (let i = 0; i < chapters.length; i++)
         {
-          if(i >= Quran.MAX_OPTION_CHOICES) break;
+          if(i >= MAX_OPTION_CHOICES) break;
           const chapter = chapters[i].item;
           options.push({name: chapter.name_simple, value: chapter.id});
         }
         break;
       case ReciteCommandOptions.Reciter:
+        const surah = interaction.options.getInteger(ReciteCommandOptions.Surah, true);
+        const reciters = Array.from(this.recitersPerChapter[surah]);
+
         if(isNullOrUndefinedOrEmpty(focusedOption.value))
         {
-          const reciters = await QuranAudioAPI.listReciters();
-          for(let i = 0; i < 25; i++)
+          for(let i = 0; i < MAX_OPTION_CHOICES; i++)
           {
             const reciter = reciters[i];
             options.push({name: reciter.name, value: reciter.id});
@@ -78,12 +102,14 @@ export class ReciteAutocomplete extends InteractionHandler {
           break;
         }
 
-        const surah = interaction.options.getInteger(ReciteCommandOptions.Surah, true);
-        const reciters = this.recitersFuse.search({$and: [{name: focusedOption.value}, {$path: ["moshaf", "surah_list"], $val: "," + surah.toString() + "," }]});
-        for (let i = 0; i < reciters.length; i++)
+        if(this.recitersFuse == null)
+          this.recitersFuse = new Fuse(reciters, {threshold: 0.3, keys: ['name']});
+
+        const relatedReciters = this.recitersFuse.search(focusedOption.value);
+        for (let i = 0; i < relatedReciters.length; i++)
         {
-          if(i >= Quran.MAX_OPTION_CHOICES) break;
-          const reciter = reciters[i].item;
+          if(i >= MAX_OPTION_CHOICES) break;
+          const reciter = relatedReciters[i].item;
           options.push({name: reciter.name, value: reciter.id});
         }
         break;

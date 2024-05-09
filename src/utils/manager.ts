@@ -1,7 +1,8 @@
 import { Recitation, Recitator } from "./recitator";
 import { userData } from "../data/audio-user-data.json"; 
-import { GuildMember, VoiceState } from 'discord.js';
+import { GuildMember, Message, VoiceState } from 'discord.js';
 import { Command } from "@sapphire/framework";
+import { RecitatorInteraction } from "./recitatorInteraction";
 
 type UserData = 
 {
@@ -10,38 +11,28 @@ type UserData =
     tafsirId : number | null;
 }
 
-export type ServerRecitator =
-{
-    readonly originalInteraction : Command.ChatInputCommandInteraction;
-    readonly recitator : Recitator;
-}
-
 export class RecitatorsManager
 {
     private static readonly NEW_USER_DATA = { reciterId: null, translationId: null, tafsirId: null };
-    private static serverRecitators : Map<string, ServerRecitator> = new Map();
+    private static recitatorInteractions : Map<string, RecitatorInteraction> = new Map();
     private static userData : Map<string, UserData>;
 
-    public static getServerRecitator(guildId: string) : ServerRecitator
+    public static getRecitatorInteraction(guildId: string) : RecitatorInteraction
     {
-        if (!this.serverRecitators.has(guildId))
+        if (!this.recitatorInteractions.has(guildId))
         {
             return;
         }
-        return this.serverRecitators.get(guildId);
+        return this.recitatorInteractions.get(guildId);
     }
 
-    public static createServerRecitator(interaction: Command.ChatInputCommandInteraction, voice: VoiceState, onRecitationChanged: (newTrack) => void, onRecitatorStopped: (recitator: ServerRecitator) => void) : ServerRecitator
+    public static setRecitatorInteraction(recitatorInteraction: RecitatorInteraction)
     {
-        const guildId = voice.guild.id;
-        const recitator = new Recitator(voice, onRecitationChanged, (guildId) =>
+        this.recitatorInteractions.set(recitatorInteraction.interaction.guildId, recitatorInteraction);
+        recitatorInteraction.recitator.addOnDestroyListener((guildId) => 
         {
-            onRecitatorStopped(this.serverRecitators.get(guildId));
-            this.serverRecitators.delete(guildId);
+            this.recitatorInteractions.delete(guildId);
         });
-        const serverRecitator = { originalInteraction: interaction, recitator: recitator };
-        this.serverRecitators.set(guildId, serverRecitator);
-        return serverRecitator;
     }
 
     public static getUserData(memberId: string)

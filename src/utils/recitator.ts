@@ -25,24 +25,20 @@ export class Recitation
 
 export class Recitator
 {
-    private _queue : Recitation[];
-    private _queueIndex : number;
+    private _queue : Recitation[] = [];
+    private _queueIndex : number = -1;
     private _audioPlayer : AudioPlayer;
     private _guildId : string;
-    private _repeat : boolean;
+    private _repeat : boolean = false;
 
-    public onRecitationChanged : (newRecitation : Recitation) => void;
-    public onDestroy : (guildId: string) => void;
+    private onRecitationChangedListeners : ((newRecitation : Recitation) => void)[] = [];
+    private onDestroyListeners : ((guildId: string) => void)[] = [];
+    private onRecitationFailedListeners : ((recitation: Recitation) => void)[] = [];
 
-    constructor(voiceState : VoiceState, onRecitationChanged : (newRecitation : Recitation) => void, onDestroy : (guildId: string) => void)
+    constructor(voiceState : VoiceState)
     {
         this._audioPlayer = createAudioPlayer();
-
-        this._queue = [];
-        this._queueIndex = -1;
         this._guildId = voiceState.guild.id;
-        this.onRecitationChanged = onRecitationChanged;
-        this.onDestroy = onDestroy;
 
         const connection = joinVoiceChannel({
             channelId: voiceState.channelId,
@@ -56,9 +52,9 @@ export class Recitator
         });
     }
 
-    set repeat(value : boolean)
+    get currentRecitation() : Recitation
     {
-        this._repeat = value;
+        return this._queue[this._queueIndex];
     }
 
     get queueIndex(): number
@@ -66,30 +62,84 @@ export class Recitator
         return this._queueIndex;
     }
 
-    get currentRecitation() : Recitation
-    {
-        return this._queue[this._queueIndex];
-    }
-
     get queue() : Recitation[]
     {
         return this._queue;
     }
+    
+    set repeat(value : boolean)
+    {
+        this._repeat = value;
+    }
 
-    public recite(track : Recitation) : boolean
+    public addOnRecitationChangedListener(listener : (newRecitation : Recitation) => void)
+    {
+        this.onRecitationChangedListeners.push(listener);
+    }
+
+    public addOnDestroyListener(listener : (guildId: string) => void)
+    {
+        this.onDestroyListeners.push(listener);
+    }
+
+    public addOnRecitationFailedListener(listener : (recitation: Recitation) => void)
+    {
+        this.onRecitationFailedListeners.push(listener);
+    }
+
+    public removeOnRecitationChangedListener(listener : (newRecitation : Recitation) => void)
+    {
+        const index = this.onRecitationChangedListeners.indexOf(listener);
+        if (index > -1)
+        {
+            this.onRecitationChangedListeners.splice(index, 1);
+        }
+    }
+
+    public removeOnDestroyListener(listener : (guildId: string) => void)
+    {
+        const index = this.onDestroyListeners.indexOf(listener);
+        if (index > -1)
+        {
+            this.onDestroyListeners.splice(index, 1);
+        }
+    }
+
+    public removeOnRecitationFailedListener(listener : (recitation: Recitation) => void)
+    {
+        const index = this.onRecitationFailedListeners.indexOf(listener);
+        if (index > -1)
+        {
+            this.onRecitationFailedListeners.splice(index, 1);
+        }
+    }
+
+    private onRecitationChanged(newRecitation: Recitation)
+    {
+        this.onRecitationChangedListeners.forEach(listener => listener(newRecitation));
+    }
+
+    private onDestroy(guildId: string)
+    {
+        this.onDestroyListeners.forEach(listener => listener(guildId));
+    }
+
+    private onRecitationFailed(recitation: Recitation)
+    {
+        this.onRecitationFailedListeners.forEach(listener => listener(recitation));
+    }
+
+    private recite(track : Recitation)
     {
         try
         {
             const resource = createAudioResource(track.audioUrl);
-            console.log("Playing", track.audioUrl);
             this._audioPlayer.play(resource);
-            console.log("Played", track.audioUrl);
-            return true;
         }
         catch (error)
         {
             console.error("Failed to play", track.audioUrl, error);
-            return false;
+            this.onRecitationFailed(track);
         }
     }
 
@@ -145,5 +195,12 @@ export class Recitator
         connection.disconnect();
         connection.destroy();
         this.onDestroy(this._guildId);
+    }
+
+    public clear()
+    {
+        this._audioPlayer.stop();
+        this._queue = [];
+        this._queueIndex = -1;
     }
 }
