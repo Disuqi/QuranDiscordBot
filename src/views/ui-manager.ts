@@ -1,4 +1,4 @@
-import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, Colors } from 'discord.js';
+import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, Colors, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from 'discord.js';
 import { Recitation } from '../utils/recitator';
 
 export enum RecitatorButton
@@ -30,6 +30,22 @@ export class UIManager
         const stopButton = new ButtonBuilder().setLabel("Stop").setStyle(ButtonStyle.Danger).setCustomId(RecitatorButton.Stop);
         const queueButton = new ButtonBuilder().setLabel("Queue").setStyle(ButtonStyle.Secondary).setCustomId(RecitatorButton.Queue);
         actionRow.addComponents(addButton, skipButton, stopButton, queueButton);
+        return actionRow;
+    }
+
+    public static getChaptersActionRow() : ActionRowBuilder<StringSelectMenuBuilder>
+    {
+        const actionRow = new ActionRowBuilder<StringSelectMenuBuilder>();
+        const selectMenu = new StringSelectMenuBuilder()
+            .setCustomId("Surah")
+            .setPlaceholder("Select a surah");
+        const options = []
+        for(let i = 1; i <= 114; i++)
+        {
+            options.push(new StringSelectMenuOptionBuilder().setLabel(i.toString()).setValue(i.toString()));
+        }
+        selectMenu.addOptions(options);
+        actionRow.addComponents(selectMenu);
         return actionRow;
     }
 }

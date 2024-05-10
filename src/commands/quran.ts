@@ -148,7 +148,7 @@ export class Quran extends Subcommand {
         }
 
         if(enqueue)
-            await recitatorInteraction.notifier.edit(`Added ${recitation.surahNameEnglish} to the queue!`);  
+            await recitatorInteraction.notifier.edit(`Added ${recitation.surahNameTransliterated} to the queue!`);  
         else
             await this.updateRecitatorInteraction(recitatorInteraction.interaction, recitation);
     }
