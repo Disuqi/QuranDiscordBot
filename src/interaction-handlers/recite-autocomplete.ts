@@ -54,6 +54,7 @@ export class ReciteAutocomplete extends InteractionHandler {
   // you could connect this to mondo db database
   public override async parse(interaction: AutocompleteInteraction)
   {
+    console.log("parse autocomplete");
     switch (interaction.commandId)
     {
       case Quran.COMMAND_ID:

@@ -1,4 +1,4 @@
-import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, Colors, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from 'discord.js';
+import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, Colors, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, TextInputBuilder, ModalActionRowComponentBuilder } from 'discord.js';
 import { Recitation } from '../utils/recitator';
 
 export enum RecitatorButton
@@ -33,19 +33,11 @@ export class UIManager
         return actionRow;
     }
 
-    public static getChaptersActionRow() : ActionRowBuilder<StringSelectMenuBuilder>
+    public static getChaptersActionRow() : ActionRowBuilder<ModalActionRowComponentBuilder>
     {
-        const actionRow = new ActionRowBuilder<StringSelectMenuBuilder>();
-        const selectMenu = new StringSelectMenuBuilder()
-            .setCustomId("Surah")
-            .setPlaceholder("Select a surah");
-        const options = []
-        for(let i = 1; i <= 114; i++)
-        {
-            options.push(new StringSelectMenuOptionBuilder().setLabel(i.toString()).setValue(i.toString()));
-        }
-        selectMenu.addOptions(options);
-        actionRow.addComponents(selectMenu);
+        const actionRow = new ActionRowBuilder<ModalActionRowComponentBuilder>();
+        const textInput = new TextInputBuilder();
+        actionRow.addComponents(textInput);
         return actionRow;
     }
 }
