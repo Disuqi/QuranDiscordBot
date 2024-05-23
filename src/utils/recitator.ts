@@ -31,9 +31,10 @@ export class Recitator
     private _guildId : string;
     private _repeat : boolean = false;
 
-    private onRecitationChangedListeners : ((newRecitation : Recitation) => void)[] = [];
+    private onRecitationChangedListeners : ((index: number, recitations : Recitation[]) => void)[] = [];
     private onDestroyListeners : ((guildId: string) => void)[] = [];
     private onRecitationFailedListeners : ((recitation: Recitation) => void)[] = [];
+    private onQueueChangedListeners : ((queue: Recitation[]) => void)[] = [];
 
     constructor(voiceState : VoiceState)
     {
@@ -72,7 +73,7 @@ export class Recitator
         this._repeat = value;
     }
 
-    public addOnRecitationChangedListener(listener : (newRecitation : Recitation) => void)
+    public addOnRecitationChangedListener(listener : (index: number, recitations : Recitation[]) => void)
     {
         this.onRecitationChangedListeners.push(listener);
     }
@@ -87,7 +88,12 @@ export class Recitator
         this.onRecitationFailedListeners.push(listener);
     }
 
-    public removeOnRecitationChangedListener(listener : (newRecitation : Recitation) => void)
+    public addOnQueueChangedListener(listener : (queue: Recitation[]) => void)
+    {
+        this.onQueueChangedListeners.push(listener);
+    }
+
+    public removeOnRecitationChangedListener(listener : (index: number, recitations: Recitation[]) => void)
     {
         const index = this.onRecitationChangedListeners.indexOf(listener);
         if (index > -1)
@@ -114,9 +120,18 @@ export class Recitator
         }
     }
 
-    private onRecitationChanged(newRecitation: Recitation)
+    public removeOnQueueChangedListener(listener : (queue: Recitation[]) => void)
     {
-        this.onRecitationChangedListeners.forEach(listener => listener(newRecitation));
+        const index = this.onQueueChangedListeners.indexOf(listener);
+        if (index > -1)
+        {
+            this.onQueueChangedListeners.splice(index, 1);
+        }
+    }
+
+    private onRecitationChanged(index: number, recitations: Recitation[])
+    {
+        this.onRecitationChangedListeners.forEach(listener => listener(index, recitations));
     }
 
     private onDestroy(guildId: string)
@@ -127,6 +142,11 @@ export class Recitator
     private onRecitationFailed(recitation: Recitation)
     {
         this.onRecitationFailedListeners.forEach(listener => listener(recitation));
+    }
+
+    private onQueueChanged(queue: Recitation[])
+    {
+        this.onQueueChangedListeners.forEach(listener => listener(queue));
     }
 
     private recite(track : Recitation)
@@ -165,13 +185,14 @@ export class Recitator
             }
             const track = this._queue[this._queueIndex]
             this.recite(track);
-            this.onRecitationChanged(track);
+            this.onRecitationChanged(this._queueIndex, this._queue);
         }
     }
 
     public enqueue(track : Recitation)
     {
         this._queue.push(track);
+        this.onQueueChanged(this._queue);
         if (this._audioPlayer.state.status == AudioPlayerStatus.Idle)
         {
             this.next();
@@ -202,5 +223,6 @@ export class Recitator
         this._audioPlayer.stop();
         this._queue = [];
         this._queueIndex = -1;
+        this.onQueueChanged(this._queue);
     }
 }

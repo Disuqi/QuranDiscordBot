@@ -63,7 +63,8 @@ export class QuranTextAPI {
     static async search(query: string)
     {
         const response = await axios.get(`${QuranTextAPI.quran_com}/search`, {params: { q: query }});
-        return response.data;
+        console.log(response);
+        return response.data["results"] as SearchResult[];
     }
 
     private static paramsToJson(params : QuranParams) : Record<string, any>
@@ -164,4 +165,28 @@ export type TranslationInfo =
     slug: string,
     language_name: string,
     translated_name: { name: string, language_name: string }
+}
+
+export type SearchResult = 
+{
+    verse_key: string,
+    verse_id: number,
+    text: string,
+    highlighted: null,
+    words: [Word],
+    translations: [VerseTranslation]
+}
+
+export type VerseTranslation =
+{
+    text: string,
+    resource_id: number,
+    name: string,
+    language_name: string
+}
+
+export type Word = 
+{
+    char_type: string,
+    text: string,
 }

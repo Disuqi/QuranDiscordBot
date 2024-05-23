@@ -4,7 +4,7 @@ import { GuildMember, Message, VoiceState } from 'discord.js';
 import { Command } from "@sapphire/framework";
 import { RecitatorInteraction } from "./recitatorInteraction";
 
-type UserData = 
+export type UserData = 
 {
     reciterId : number | null;
     translationId : number | null;
@@ -35,7 +35,7 @@ export class RecitatorsManager
         });
     }
 
-    public static getUserData(memberId: string)
+    public static getUserData(memberId: string) : UserData
     {
         if (this.userData == null)
         {

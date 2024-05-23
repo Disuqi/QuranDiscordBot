@@ -6,5 +6,6 @@ export type RecitatorInteraction =
 {
     readonly interaction : Command.ChatInputCommandInteraction;
     readonly notifier: Message;
+    readonly queueMessage: Message;
     readonly recitator : Recitator;
 }

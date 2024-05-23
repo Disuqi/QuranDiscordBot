@@ -7,10 +7,9 @@ import { QuranTextAPI, SurahInfo } from '../apis/quran-text-api';
 import { isNullOrUndefinedOrEmpty } from '@sapphire/utilities';
 import { MAX_OPTION_CHOICES } from '../utils/consts';
 
-export class ReciteAutocomplete extends InteractionHandler {
+export class ReciteAutocomplete extends InteractionHandler
+{
   allChapters : SurahInfo[];
-  recitersPerChapter : {[key: number]: Set<Reciter> } = {};
-
   chaptersFuse : Fuse<SurahInfo>;
   recitersFuse : Fuse<Reciter>;
 
@@ -24,21 +23,6 @@ export class ReciteAutocomplete extends InteractionHandler {
   {
     this.allChapters = await QuranTextAPI.listSurahs();
     this.chaptersFuse = new Fuse(this.allChapters, { threshold: 0.3, keys: ['id', 'name_simple', 'name_arabic', 'translated_name.name'] });
-
-    this.allChapters.forEach(chapter => this.recitersPerChapter[chapter.id] = new Set<Reciter>());
-    const allReciters = await QuranAudioAPI.listReciters();
-    
-    allReciters.forEach(reciter => 
-      {
-        reciter.moshaf.forEach(moshaf => 
-          {
-            const moshafSuras : number[] = moshaf.surah_list.split(',').map(Number);
-            moshafSuras.forEach(surah => 
-              {
-                  this.recitersPerChapter[surah].add(reciter);
-              });
-          });
-      });
   }
 
   public override async run(interaction: AutocompleteInteraction, result: InteractionHandler.ParseResult<this>) 
@@ -47,14 +31,8 @@ export class ReciteAutocomplete extends InteractionHandler {
     return interaction.respond(result);
   }
 
-  //also other surahs dont work for some reason, the reciters search is not working as expected
-
-  // if nothing is types either put some popular surahs
-  // or find the users latest uses
-  // you could connect this to mondo db database
   public override async parse(interaction: AutocompleteInteraction)
   {
-    console.log("parse autocomplete");
     switch (interaction.commandId)
     {
       case Quran.COMMAND_ID:
@@ -91,8 +69,7 @@ export class ReciteAutocomplete extends InteractionHandler {
         break;
       case ReciteCommandOptions.Reciter:
         const surah = interaction.options.getInteger(ReciteCommandOptions.Surah, true);
-        const reciters = Array.from(this.recitersPerChapter[surah]);
-
+        const reciters = QuranAudioAPI.listRecitersBySurah(surah);
         if(isNullOrUndefinedOrEmpty(focusedOption.value))
         {
           for(let i = 0; i < MAX_OPTION_CHOICES; i++)

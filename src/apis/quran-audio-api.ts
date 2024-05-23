@@ -1,11 +1,53 @@
-import axios from "axios";
+import axios, { all } from "axios";
+import { QuranTextAPI } from "./quran-text-api";
 
 export class QuranAudioAPI
 {
-    static async listReciters() : Promise<Reciter[]>
+    private static _allReciters : Reciter[];
+    private static _recitersPerChapter : {[key: number]: Set<Reciter> };
+
+    static async initialize() : Promise<void>
     {
         const response = await axios.get("https://mp3quran.net/api/v3/reciters", {params: {language: 'eng'}});
-        return response.data['reciters'] as Reciter[];
+        QuranAudioAPI._allReciters = response.data['reciters'] as Reciter[]; 
+
+        QuranAudioAPI._recitersPerChapter = {};
+        for(let i = 1; i <= 114; i++)
+        {
+            QuranAudioAPI._recitersPerChapter[i] = new Set<Reciter>();
+        }
+
+        QuranAudioAPI._allReciters.forEach(reciter => 
+        {
+            reciter.moshaf.forEach(moshaf => 
+            {
+                const moshafSuras : number[] = moshaf.surah_list.split(',').map(Number);
+                moshafSuras.forEach(surah => 
+                {
+                    QuranAudioAPI.recitersPerChapter[surah].add(reciter);
+                });
+            });
+        });
+    }
+
+    static get listReciters() : Reciter[]
+    {
+        return QuranAudioAPI._allReciters;
+    }
+
+    static get recitersPerChapter() : {[key: number]: Set<Reciter> }
+    {
+        return QuranAudioAPI._recitersPerChapter;
+    }
+
+    static getReciter(id: number) : Reciter
+    {
+        return QuranAudioAPI._allReciters.find(reciter => reciter.id == id);
+    }
+
+    static listRecitersBySurah(surah: number) : Reciter[]
+    {
+        return Array.from(QuranAudioAPI.recitersPerChapter[surah]);
     }
 
     static async getSurahAudio(surah : number, reciterId : number) : Promise<string>
@@ -23,16 +65,10 @@ export class QuranAudioAPI
         throw new Error("No audio found for surah " + surah + " and reciter " + reciterId);
     }
 
-    static async getReciter(reciter: number) : Promise<Reciter>
+    static randomReciterForSurah(surah: number) : Reciter
     {
-        const response = await axios.get("https://mp3quran.net/api/v3/reciters", {params: {language: 'eng', reciter: reciter}});
-        return response.data['reciters'][0] as Reciter;
-    }
-
-    static async listRecitersBySurah(surah: number) : Promise<Reciter[]>
-    {
-        const response = await axios.get("https://mp3quran.net/api/v3/reciters", {params: {language: 'eng', sura: surah}});
-        return response.data['reciters'] as Reciter[];
+        const reciters = QuranAudioAPI.listRecitersBySurah(surah);
+        return reciters[Math.floor(Math.random() * reciters.length)];
     }
 }
 

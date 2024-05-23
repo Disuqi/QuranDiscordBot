@@ -3,10 +3,9 @@ import { Recitation } from '../utils/recitator';
 
 export enum RecitatorButton
 {
-    Add = "add",
     Skip = "skip",
     Stop = "stop",
-    Queue = "queue"
+    More = "more"
 }
 
 export class UIManager
@@ -25,11 +24,12 @@ export class UIManager
     public static getRecitatorActionRow() : ActionRowBuilder<ButtonBuilder>
     {
         const actionRow = new ActionRowBuilder<ButtonBuilder>();
-        const addButton = new ButtonBuilder().setLabel("Add").setStyle(ButtonStyle.Success).setCustomId(RecitatorButton.Add);
+
         const skipButton = new ButtonBuilder().setLabel("Skip").setStyle(ButtonStyle.Primary).setCustomId(RecitatorButton.Skip);
         const stopButton = new ButtonBuilder().setLabel("Stop").setStyle(ButtonStyle.Danger).setCustomId(RecitatorButton.Stop);
-        const queueButton = new ButtonBuilder().setLabel("Queue").setStyle(ButtonStyle.Secondary).setCustomId(RecitatorButton.Queue);
-        actionRow.addComponents(addButton, skipButton, stopButton, queueButton);
+        const moreButton = new ButtonBuilder().setLabel("More").setStyle(ButtonStyle.Secondary).setCustomId(RecitatorButton.More);
+
+        actionRow.addComponents(skipButton, stopButton, moreButton);
         return actionRow;
     }
 
