@@ -1,8 +1,9 @@
 import { InteractionHandler, InteractionHandlerTypes } from '@sapphire/framework';
 import { ActionRow, ActionRowBuilder, ButtonInteraction, ModalBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from 'discord.js';
-import { RecitatorButton, UIManager } from '../views/ui-manager';
+import { UIManager } from '../views/ui-manager';
 import { RecitatorsManager } from '../utils/manager';
 import { RecitatorInteraction } from '../utils/recitatorInteraction';
+import { RecitatorButton } from '../utils/consts';
 
 export class ButtonHandler extends InteractionHandler 
 {
@@ -27,7 +28,9 @@ export class ButtonHandler extends InteractionHandler
           recitatorInteraction.recitator.stop();
           break;
         case RecitatorButton.More:
-          console.log("More pressed");
+          const buttonsActionRow = UIManager.getRecitatorActionRow();
+          const selectMenu = UIManager.moreOptionsSelectMenu();
+          recitatorInteraction.interaction.editReply({components: [buttonsActionRow, selectMenu]});
           break;
     }
     await interaction.deferReply();

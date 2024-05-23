@@ -247,10 +247,8 @@ export class Quran extends Subcommand {
         {
             const recitation = recitations[i];
             if(i == index)
-                content += `[${i + 1}]. `;
-            else
-                content += `${i + 1}. `;
-            content += `${recitation.surahNameTransliterated} - ${recitation.reciterName}\n`; 
+                content += `:loud_sound: `;
+            content += `${i + 1}. ${recitation.surahNameTransliterated} - ${recitation.reciterName}\n`; 
         }
         await message.edit(content);
     }

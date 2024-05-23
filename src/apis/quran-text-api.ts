@@ -63,8 +63,8 @@ export class QuranTextAPI {
     static async search(query: string)
     {
         const response = await axios.get(`${QuranTextAPI.quran_com}/search`, {params: { q: query }});
-        console.log(response);
-        return response.data["results"] as SearchResult[];
+        console.log(response.data);
+        return response.data["search"]["results"] as SearchResult[];
     }
 
     private static paramsToJson(params : QuranParams) : Record<string, any>

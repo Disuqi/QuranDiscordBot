@@ -1,12 +1,6 @@
-import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, Colors, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, TextInputBuilder, ModalActionRowComponentBuilder } from 'discord.js';
+import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, Colors, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, TextInputBuilder, ModalActionRowComponentBuilder, SelectMenuBuilder } from 'discord.js';
 import { Recitation } from '../utils/recitator';
-
-export enum RecitatorButton
-{
-    Skip = "skip",
-    Stop = "stop",
-    More = "more"
-}
+import { RecitatorButton, RecitatorMoreOptions } from '../utils/consts';
 
 export class UIManager
 {
@@ -33,11 +27,18 @@ export class UIManager
         return actionRow;
     }
 
-    public static getChaptersActionRow() : ActionRowBuilder<ModalActionRowComponentBuilder>
+    public static moreOptionsSelectMenu() : ActionRowBuilder<SelectMenuBuilder>
     {
-        const actionRow = new ActionRowBuilder<ModalActionRowComponentBuilder>();
-        const textInput = new TextInputBuilder();
-        actionRow.addComponents(textInput);
+        const actionRow = new ActionRowBuilder<SelectMenuBuilder>();
+        const moreOptions = new StringSelectMenuBuilder();
+        moreOptions.setPlaceholder("Select an option");
+        moreOptions.setCustomId("more_options_menu");
+        moreOptions.addOptions(
+            new StringSelectMenuOptionBuilder().setLabel("Repeat Surah").setValue(RecitatorMoreOptions.RepeatSurah),
+            new StringSelectMenuOptionBuilder().setLabel("Repeat Queue").setValue(RecitatorMoreOptions.RepeatQueue),
+            new StringSelectMenuOptionBuilder().setLabel("Remove Last Added Recitation").setValue(RecitatorMoreOptions.RemoveLastAddedRecitation)
+        );
+        actionRow.addComponents(moreOptions);
         return actionRow;
     }
 }
