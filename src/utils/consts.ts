@@ -11,5 +11,5 @@ export enum RecitatorMoreOptions
 {
     RepeatSurah = "repeat_surah",
     RepeatQueue = "repeat_queue",
-    RemoveLastAddedRecitation = "remove_last_added_recitation"
+    RemoveRecitationFromQueue = "remove_recitation_from_queue",
 }

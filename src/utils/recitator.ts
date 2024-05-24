@@ -1,27 +1,7 @@
 import { AudioPlayer, AudioPlayerStatus, NoSubscriberBehavior, createAudioPlayer, createAudioResource, entersState, generateDependencyReport, getVoiceConnection, joinVoiceChannel } from "@discordjs/voice";
 import { VoiceState } from "discord.js";
+import { Recitation } from "./recitation";
 
-export class Recitation
-{
-    readonly reciterId : number;
-    readonly reciterName : string;
-    readonly surahId: number;
-    readonly surahNameArabic : string;
-    readonly surahNameTransliterated : string;
-    readonly surahNameEnglish : string;
-    readonly audioUrl : string;
-    
-    constructor(reciterId : number, reciterName : string, surahId: number, surahNameArabic : string, surahNameTransliterated: string, surahNameEnglish : string, audioUrl : string)
-    {
-        this.reciterId = reciterId;
-        this.reciterName = reciterName;
-        this.surahId = surahId;
-        this.surahNameArabic = surahNameArabic;
-        this.surahNameTransliterated = surahNameTransliterated;
-        this.surahNameEnglish = surahNameEnglish;
-        this.audioUrl = audioUrl;
-    }
-}
 
 export class Recitator
 {
@@ -31,10 +11,10 @@ export class Recitator
     private _guildId : string;
     private _repeat : boolean = false;
 
-    private onRecitationChangedListeners : ((index: number, recitations : Recitation[]) => void)[] = [];
+    private onRecitationChangedListeners : ((queue: Recitation[], index: number) => void)[] = [];
     private onDestroyListeners : ((guildId: string) => void)[] = [];
     private onRecitationFailedListeners : ((recitation: Recitation) => void)[] = [];
-    private onQueueChangedListeners : ((queue: Recitation[]) => void)[] = [];
+    private onQueueChangedListeners : ((queue: Recitation[], index: number) => void)[] = [];
 
     constructor(voiceState : VoiceState)
     {
@@ -73,7 +53,7 @@ export class Recitator
         this._repeat = value;
     }
 
-    public addOnRecitationChangedListener(listener : (index: number, recitations : Recitation[]) => void)
+    public addOnRecitationChangedListener(listener : (queue : Recitation[], index: number) => void)
     {
         this.onRecitationChangedListeners.push(listener);
     }
@@ -88,12 +68,12 @@ export class Recitator
         this.onRecitationFailedListeners.push(listener);
     }
 
-    public addOnQueueChangedListener(listener : (queue: Recitation[]) => void)
+    public addOnQueueChangedListener(listener : (queue: Recitation[], index: number) => void)
     {
         this.onQueueChangedListeners.push(listener);
     }
 
-    public removeOnRecitationChangedListener(listener : (index: number, recitations: Recitation[]) => void)
+    public removeOnRecitationChangedListener(listener : (queue: Recitation[], index: number) => void)
     {
         const index = this.onRecitationChangedListeners.indexOf(listener);
         if (index > -1)
@@ -120,7 +100,7 @@ export class Recitator
         }
     }
 
-    public removeOnQueueChangedListener(listener : (queue: Recitation[]) => void)
+    public removeOnQueueChangedListener(listener : (queue: Recitation[], index: number) => void)
     {
         const index = this.onQueueChangedListeners.indexOf(listener);
         if (index > -1)
@@ -129,9 +109,9 @@ export class Recitator
         }
     }
 
-    private onRecitationChanged(index: number, recitations: Recitation[])
+    private onRecitationChanged(queue: Recitation[], index: number)
     {
-        this.onRecitationChangedListeners.forEach(listener => listener(index, recitations));
+        this.onRecitationChangedListeners.forEach(listener => listener(queue, index));
     }
 
     private onDestroy(guildId: string)
@@ -144,9 +124,9 @@ export class Recitator
         this.onRecitationFailedListeners.forEach(listener => listener(recitation));
     }
 
-    private onQueueChanged(queue: Recitation[])
+    private onQueueChanged(queue: Recitation[], index: number)
     {
-        this.onQueueChangedListeners.forEach(listener => listener(queue));
+        this.onQueueChangedListeners.forEach(listener => listener(queue, index));
     }
 
     private recite(track : Recitation)
@@ -185,14 +165,14 @@ export class Recitator
             }
             const track = this._queue[this._queueIndex]
             this.recite(track);
-            this.onRecitationChanged(this._queueIndex, this._queue);
+            this.onRecitationChanged(this._queue, this._queueIndex);
         }
     }
 
     public enqueue(track : Recitation)
     {
         this._queue.push(track);
-        this.onQueueChanged(this._queue);
+        this.onQueueChanged(this._queue, this._queueIndex);
         if (this._audioPlayer.state.status == AudioPlayerStatus.Idle)
         {
             this.next();
@@ -223,6 +203,6 @@ export class Recitator
         this._audioPlayer.stop();
         this._queue = [];
         this._queueIndex = -1;
-        this.onQueueChanged(this._queue);
+        this.onQueueChanged(this._queue, this._queueIndex);
     }
 }

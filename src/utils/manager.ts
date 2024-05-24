@@ -1,21 +1,8 @@
-import { Recitation, Recitator } from "./recitator";
-import { userData } from "../data/audio-user-data.json"; 
-import { GuildMember, Message, VoiceState } from 'discord.js';
-import { Command } from "@sapphire/framework";
 import { RecitatorInteraction } from "./recitatorInteraction";
-
-export type UserData = 
-{
-    reciterId : number | null;
-    translationId : number | null;
-    tafsirId : number | null;
-}
 
 export class RecitatorsManager
 {
-    private static readonly NEW_USER_DATA = { reciterId: null, translationId: null, tafsirId: null };
     private static recitatorInteractions : Map<string, RecitatorInteraction> = new Map();
-    private static userData : Map<string, UserData>;
 
     public static getRecitatorInteraction(guildId: string) : RecitatorInteraction
     {
@@ -33,23 +20,5 @@ export class RecitatorsManager
         {
             this.recitatorInteractions.delete(guildId);
         });
-    }
-
-    public static getUserData(memberId: string) : UserData
-    {
-        if (this.userData == null)
-        {
-            this.userData = new Map<string, UserData>();
-            for (const [key, value] of Object.entries(userData))
-            {
-                this.userData.set(key, value as UserData);
-            }
-        }
-
-        if (!this.userData.hasOwnProperty(memberId))
-        {
-            this.userData[memberId] = this.NEW_USER_DATA;
-        }
-        return this.userData[memberId];
     }
 }

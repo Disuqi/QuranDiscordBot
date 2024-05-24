@@ -1,5 +1,5 @@
 import { InteractionHandler, InteractionHandlerTypes } from '@sapphire/framework';
-import { ActionRow, ActionRowBuilder, ButtonInteraction, ModalBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from 'discord.js';
+import { ButtonInteraction } from 'discord.js';
 import { UIManager } from '../views/ui-manager';
 import { RecitatorsManager } from '../utils/manager';
 import { RecitatorInteraction } from '../utils/recitatorInteraction';
@@ -20,9 +20,7 @@ export class ButtonHandler extends InteractionHandler
     switch(button)
     {
         case RecitatorButton.Skip:
-          const oldRecitationName = recitatorInteraction.recitator.currentRecitation.surahNameTransliterated;
           recitatorInteraction.recitator.next();
-          recitatorInteraction.notifier.edit({content: "Skipped " + oldRecitationName });
           break;
         case RecitatorButton.Stop:
           recitatorInteraction.recitator.stop();

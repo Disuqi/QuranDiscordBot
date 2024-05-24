@@ -3,6 +3,7 @@ import { QuranTextAPI } from "./quran-text-api";
 
 export class QuranAudioAPI
 {
+    public static readonly DEFAULT_RECITER_ID = 118;
     private static _allReciters : Reciter[];
     private static _recitersPerChapter : {[key: number]: Set<Reciter> };
 
@@ -50,19 +51,41 @@ export class QuranAudioAPI
         return Array.from(QuranAudioAPI.recitersPerChapter[surah]);
     }
 
-    static async getSurahAudio(surah : number, reciterId : number) : Promise<string>
+    static async getSurahAudio(surah : number, reciterId : number, moshafType: MoshafType = MoshafType["Rewayat Hafs A'n Assem - Murattal"], allowOtherMoshaf: boolean = true) : Promise<string>
     {
         const response = await axios.get("https://mp3quran.net/api/v3/reciters", {params: {language: 'eng', reciter: reciterId}});
         const reciter = response.data['reciters'][0] as Reciter;
+
+        let link : string = null;
         for(let i = reciter.moshaf.length - 1; i >= 0; i--)
         {
             const moshaf = reciter.moshaf[i];
-            if(moshaf.surah_list.includes(surah.toString()))
+            if(moshaf.moshaf_type == moshafType)
             {
-                return moshaf.server + surah.toString().padStart(3, '0') + ".mp3";
+                if(moshaf.surah_list.includes(surah.toString()))
+                    link = moshaf.server + surah.toString().padStart(3, '0') + ".mp3";
+
+                break;
             }
         }
-        throw new Error("No audio found for surah " + surah + " and reciter " + reciterId);
+
+        if(!link && allowOtherMoshaf)
+        {
+            for(let i = reciter.moshaf.length - 1; i >= 0; i--)
+            {
+                const moshaf = reciter.moshaf[i];
+                if(moshaf.surah_list.includes(surah.toString()))
+                {
+                    link = moshaf.server + surah.toString().padStart(3, '0') + ".mp3";
+                    break;
+                }
+            }
+        }
+
+        if(link)
+            return link;
+        else
+            throw new Error("No audio found for surah " + surah + " and reciter " + reciterId);
     }
 
     static randomReciterForSurah(surah: number) : Reciter

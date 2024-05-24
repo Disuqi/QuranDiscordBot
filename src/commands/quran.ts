@@ -1,14 +1,15 @@
 import { Command} from '@sapphire/framework';
 import { Subcommand } from '@sapphire/plugin-subcommands';
-import { AttachmentBuilder, GuildMember, Message, SlashCommandBuilder, SlashCommandIntegerOption, SlashCommandStringOption, SlashCommandSubcommandBuilder } from 'discord.js';
+import { AttachmentBuilder, GuildMember, Message, SlashCommandBooleanOption, SlashCommandBuilder, SlashCommandIntegerOption, SlashCommandStringOption, SlashCommandSubcommandBuilder } from 'discord.js';
 import { guildId } from '../private/config.json';
 import { RecitatorsManager } from '../utils/manager';
 import { RecitatorInteraction } from '../utils/recitatorInteraction';
 import { QuranTextAPI } from '../apis/quran-text-api';
-import { Recitation, Recitator } from '../utils/recitator';
+import { Recitator } from '../utils/recitator';
 import { UIManager } from '../views/ui-manager';
 import { QuranAudioAPI } from '../apis/quran-audio-api';
 import fs from 'fs';
+import { Recitation } from '../utils/recitation';
 
 export enum ReciteCommandOptions
 {
@@ -26,7 +27,6 @@ export class Quran extends Subcommand {
             description: "Recite The Holy Quran",
             subcommands: [
                 { name: 'recite', chatInputRun: 'recite', default: true},
-                { name: 'add', chatInputRun: 'add' },
                 { name: 'skip', chatInputRun: 'skip' },
                 { name: 'stop', chatInputRun: 'stop' },
                 { name: 'search', chatInputRun: 'search' }
@@ -49,17 +49,17 @@ export class Quran extends Subcommand {
         reciterOption.setDescription('Which reciter?');
         reciterOption.setAutocomplete(true);
 
+        const replaceOption = new SlashCommandBooleanOption();
+        replaceOption.setName('replace');
+        replaceOption.setDescription('Replace the current recitation queue');
+        replaceOption.setRequired(false);
+
         const reciteSubCommand = new SlashCommandSubcommandBuilder();
         reciteSubCommand.setName('recite');
         reciteSubCommand.setDescription('Recite the Quran');
         reciteSubCommand.addIntegerOption(surahOption);
+        reciteSubCommand.addBooleanOption(replaceOption);
         reciteSubCommand.addIntegerOption(reciterOption);
-
-        const enqueueSubCommand = new SlashCommandSubcommandBuilder();
-        enqueueSubCommand.setName('add');
-        enqueueSubCommand.setDescription('Add a recitation to the queue');
-        enqueueSubCommand.addIntegerOption(surahOption);
-        enqueueSubCommand.addIntegerOption(reciterOption);
 
         const skipSubCommand = new SlashCommandSubcommandBuilder();
         skipSubCommand.setName('skip');
@@ -80,7 +80,6 @@ export class Quran extends Subcommand {
         searchSubCommand.setDescription('Search for an aya in the Quran');
 
         build.addSubcommand(reciteSubCommand);
-        build.addSubcommand(enqueueSubCommand);
         build.addSubcommand(skipSubCommand);
         build.addSubcommand(stopSubCommand);
         build.addSubcommand(searchSubCommand);
@@ -90,12 +89,62 @@ export class Quran extends Subcommand {
 
     public async recite(interaction: Command.ChatInputCommandInteraction) 
     {
-        this.updateRecitator(interaction)
-    }
+        const recitatorInteraction : RecitatorInteraction = await this.getRecitatorInteraction(interaction);
+        if(!recitatorInteraction) return;
 
-    public async add(interaction: Command.ChatInputCommandInteraction)
-    {
-        this.updateRecitator(interaction, true)
+        const member = recitatorInteraction.interaction.member as GuildMember;
+        const recitator = recitatorInteraction.recitator;
+
+        interaction.reply("Getting the audio for you, please wait...");
+
+        let enqueue = true;
+        if(interaction.options.getBoolean('replace'))
+            enqueue = interaction.options.getBoolean('replace');
+
+        const surahId = interaction.options.getInteger(ReciteCommandOptions.Surah);
+
+        let reciterId = interaction.options.getInteger(ReciteCommandOptions.Reciter);
+        if(!reciterId)
+        {
+            const queue = recitatorInteraction.recitator.queue;
+            const index = recitatorInteraction.recitator.queueIndex;
+            const reciter = await QuranAudioAPI.getReciter(queue[index].reciterId);
+            const possibleReciters = QuranAudioAPI.listRecitersBySurah(surahId);
+            if(!possibleReciters.includes(reciter))
+            {
+                reciterId = QuranAudioAPI.DEFAULT_RECITER_ID;
+            }
+            else
+            {
+                reciterId = reciter.id;
+            }
+        }
+
+        const reciterinfo = await QuranAudioAPI.getReciter(reciterId);
+        const surahInfo = await QuranTextAPI.getSurahInfo(surahId);
+        const audio : string = await QuranAudioAPI.getSurahAudio(surahId, reciterId);
+
+        const recitation : Recitation = 
+        {
+            reciterId: reciterId, 
+            reciterName: reciterinfo.name, 
+            surahId: surahId,
+            surahNameArabic: surahInfo.name_arabic,
+            surahNameEnglish: surahInfo.name_simple,
+            surahNameTransliterated: surahInfo.translated_name.name,
+            audioUrl: audio
+        };
+
+        if (enqueue)
+        {
+            recitator.enqueue(recitation);
+            interaction. editReply("Added " + recitation.surahNameTransliterated + " - " + recitation.reciterName + " to the queue.")
+        }
+        else
+        {
+            recitator.clear()
+            recitator.enqueue(recitation);
+        }
     }
 
     public async skip(interaction: Command.ChatInputCommandInteraction)
@@ -114,64 +163,6 @@ export class Quran extends Subcommand {
         recitatorInteraction.recitator.stop();
         await interaction.deferReply({ephemeral: true});
         interaction.deleteReply();
-    }
-
-    private async updateRecitator(interaction: Command.ChatInputCommandInteraction, enqueue: boolean = false)
-    {
-        const recitatorInteraction : RecitatorInteraction = await this.getRecitatorInteraction(interaction);
-        if(!recitatorInteraction) return;
-        const member = recitatorInteraction.interaction.member as GuildMember;
-        const recitator = recitatorInteraction.recitator;
-        await interaction.deferReply();
-        if (interaction != recitatorInteraction.interaction)
-        {
-            interaction.deleteReply();
-        }
-
-        await recitatorInteraction.notifier.edit("Getting the audio for you, please wait...");
-        const surahId = interaction.options.getInteger(ReciteCommandOptions.Surah);
-        let reciterId = interaction.options.getInteger(ReciteCommandOptions.Reciter);
-
-
-        if(!reciterId && recitator.queue.length == 0)
-        {
-            reciterId = this.findSurahReciterForMember(surahId, member);
-        }
-        else if(!reciterId)
-        {
-            const queue = recitatorInteraction.recitator.queue;
-            const index = recitatorInteraction.recitator.queueIndex;
-            const reciter = await QuranAudioAPI.getReciter(queue[index].reciterId);
-            const possibleReciters = QuranAudioAPI.listRecitersBySurah(surahId);
-            if(!possibleReciters.includes(reciter))
-            {
-                const randInt = Math.floor(Math.random() * possibleReciters.length);
-                reciterId = possibleReciters[randInt].id;
-            }
-            else
-            {
-                reciterId = reciter.id;
-            }
-        }
-
-        const reciterinfo = await QuranAudioAPI.getReciter(reciterId);
-        const surahInfo = await QuranTextAPI.getSurahInfo(surahId);
-        const audio : string = await QuranAudioAPI.getSurahAudio(surahId, reciterId);
-
-        const recitation : Recitation = new Recitation(reciterId, reciterinfo.name, surahId, surahInfo.name_arabic, surahInfo.name_simple, surahInfo.translated_name.name, audio);
-        if (enqueue)
-            recitator.enqueue(recitation);
-        else
-        {
-            recitator.clear()
-            recitator.enqueue(recitation);
-            recitatorInteraction.notifier.edit("Reciting!");
-        }
-
-        if(enqueue)
-            await recitatorInteraction.notifier.edit(`Added ${recitation.surahNameTransliterated} to the queue!`);  
-        else
-            await this.updateRecitatorInteraction(recitatorInteraction.interaction, recitation);
     }
 
     private async getRecitatorInteraction(interaction: Command.ChatInputCommandInteraction) : Promise<RecitatorInteraction>
@@ -196,61 +187,10 @@ export class Quran extends Subcommand {
             const notifier = await interaction.channel.send("Loading...");
             const thread = await notifier.startThread({name: "Queue"});
             const queueMessage = await thread.send("Loading...");
-            recitatorInteraction = { interaction: interaction, notifier: notifier, queueMessage: queueMessage, recitator: new Recitator(voice) };
-            recitatorInteraction.recitator.addOnRecitationChangedListener((i, recitations) => 
-            {
-                this.updateRecitatorInteraction(interaction, recitations[i]);
-                this.updateQueueMessage(queueMessage, i, recitations);
-            });
-            recitatorInteraction.recitator.addOnDestroyListener((guildId) => 
-            {
-                recitatorInteraction.interaction.editReply({content: "Stopped reciting.", embeds: [], files: [], components: []});
-                recitatorInteraction.notifier.delete();
-            });
-            recitatorInteraction.recitator.addOnRecitationFailedListener((recitation) => 
-            {
-                recitatorInteraction.interaction.editReply({content: "Failed to recite " + recitation.surahNameEnglish + ". Please try again.", embeds: [], files: [], components: []});
-                recitatorInteraction.notifier.delete();
-            });
-            recitatorInteraction.recitator.addOnQueueChangedListener((queue) => 
-            {
-                this.updateQueueMessage(queueMessage, recitatorInteraction.recitator.queueIndex, queue);
-            });
-
+            recitatorInteraction = new RecitatorInteraction(interaction, notifier, queueMessage, new Recitator(voice));
             RecitatorsManager.setRecitatorInteraction(recitatorInteraction);
         }
         return recitatorInteraction;
-    }
-
-    public async updateRecitatorInteraction(interaction : Command.ChatInputCommandInteraction, recitation: Recitation)
-    {
-        let imagePath = './assets/reciters/' + recitation.reciterId + '.jpg';
-        if(!fs.existsSync(imagePath)) imagePath = "./assets/no-image.jpg";
-        const file = new AttachmentBuilder(imagePath);
-        file.setName('reciter.jpg');
-
-        const recitationEmbed = UIManager.getRecitationEmbed(recitation);
-        const actionRow = UIManager.getRecitatorActionRow();
-        await interaction.editReply({content: "", embeds: [recitationEmbed], components: [actionRow], files: [file]});
-    }
-
-    public async updateQueueMessage(message: Message, index: number, recitations: Recitation[])
-    {
-        if(recitations.length == 0)
-        {
-            await message.edit("Queue is empty.");
-            return;
-        }
-
-        let content = "Queue: \n";
-        for (let i = 0; i < recitations.length; i++)
-        {
-            const recitation = recitations[i];
-            if(i == index)
-                content += `:loud_sound: `;
-            content += `${i + 1}. ${recitation.surahNameTransliterated} - ${recitation.reciterName}\n`; 
-        }
-        await message.edit(content);
     }
 
     public async search(interaction: Command.ChatInputCommandInteraction)
@@ -258,25 +198,5 @@ export class Quran extends Subcommand {
         var query = interaction.options.getString(Quran.QUERY_OPTION_NAME);
         const response = await QuranTextAPI.search(query);
         interaction.reply(response[0].text);
-    }
-
-    private findSurahReciterForMember(surah: number, member: GuildMember) : number
-    {
-        let reciterId : number = QuranAudioAPI.randomReciterForSurah(surah).id;
-        const userData = RecitatorsManager.getUserData(member.id);
-
-        if(userData)
-        {
-            const surahReciters = QuranAudioAPI.recitersPerChapter[surah];
-            for(let reciter of surahReciters)
-            {
-                if(userData.reciterId == reciter.id)
-                {
-                    reciterId = userData.reciterId;
-                    break; 
-                }
-            }
-        }
-        return reciterId;
     }
 }
