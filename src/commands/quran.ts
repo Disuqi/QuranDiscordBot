@@ -106,17 +106,19 @@ export class Quran extends Subcommand {
         let reciterId = interaction.options.getInteger(ReciteCommandOptions.Reciter);
         if(!reciterId)
         {
+            reciterId = QuranAudioAPI.DEFAULT_RECITER_ID;
             const queue = recitatorInteraction.recitator.queue;
-            const index = recitatorInteraction.recitator.queueIndex;
-            const reciter = await QuranAudioAPI.getReciter(queue[index].reciterId);
-            const possibleReciters = QuranAudioAPI.listRecitersBySurah(surahId);
-            if(!possibleReciters.includes(reciter))
+
+            if(queue.length > 0)
             {
-                reciterId = QuranAudioAPI.DEFAULT_RECITER_ID;
-            }
-            else
-            {
-                reciterId = reciter.id;
+                const index = recitatorInteraction.recitator.queueIndex;
+                const reciter = await QuranAudioAPI.getReciter(queue[index].reciterId);
+                const possibleReciters = QuranAudioAPI.listRecitersBySurah(surahId);
+
+                if(possibleReciters.includes(reciter))
+                {
+                    reciterId = reciter.id;
+                }
             }
         }
 
@@ -130,15 +132,15 @@ export class Quran extends Subcommand {
             reciterName: reciterinfo.name, 
             surahId: surahId,
             surahNameArabic: surahInfo.name_arabic,
-            surahNameEnglish: surahInfo.name_simple,
-            surahNameTransliterated: surahInfo.translated_name.name,
+            surahNameTransliteration : surahInfo.name_simple,
+            surahNameTranslation: surahInfo.translated_name.name,
             audioUrl: audio
         };
 
         if (enqueue)
         {
             recitator.enqueue(recitation);
-            interaction. editReply("Added " + recitation.surahNameTransliterated + " - " + recitation.reciterName + " to the queue.")
+            interaction. editReply("Added " + recitation.surahNameTransliteration  + " - " + recitation.reciterName + " to the queue.")
         }
         else
         {

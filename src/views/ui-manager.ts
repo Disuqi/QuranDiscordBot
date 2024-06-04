@@ -11,9 +11,9 @@ export class UIManager
 
         const embed = new EmbedBuilder();
         embed.setAuthor({ name: current.reciterName});
-        embed.setTitle(`${current.surahNameTransliterated}`);
+        embed.setTitle(`${current.surahNameTransliteration }`);
         embed.setColor(Colors.White);
-        embed.setDescription(current.surahNameEnglish);
+        embed.setDescription(current.surahNameTranslation);
 
         embed.addFields({name: "Queue", value: `${index + 1} of ${queue.length}`, inline: true});
         let upnext : Recitation = null;
@@ -27,7 +27,7 @@ export class UIManager
         }
 
         if(upnext)
-            embed.addFields({name: "Up Next", value: `${upnext.surahNameTransliterated} - ${upnext.reciterName}`, inline: true});
+            embed.addFields({name: "Up Next", value: `${upnext.surahNameTransliteration} - ${upnext.reciterName}`, inline: true});
 
         if (repeatSurah)
             embed.setFooter({text: "Repeating Surah 🔁"});
@@ -72,7 +72,7 @@ export class UIManager
         queueSelectMenu.setCustomId("queue_menu");
         for(let i = 0; i < queue.length; i++)
         {
-            queueSelectMenu.addOptions(new StringSelectMenuOptionBuilder().setLabel(`${queue[i].surahNameTransliterated} - ${queue[i].reciterName}`).setValue(i.toString()));
+            queueSelectMenu.addOptions(new StringSelectMenuOptionBuilder().setLabel(`${queue[i].surahNameTransliteration} - ${queue[i].reciterName}`).setValue(i.toString()));
         }
         actionRow.addComponents(queueSelectMenu);
         return actionRow;

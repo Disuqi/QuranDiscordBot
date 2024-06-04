@@ -4,7 +4,7 @@ export type Recitation =
     readonly reciterName : string;
     readonly surahId: number;
     readonly surahNameArabic : string;
-    readonly surahNameTransliterated : string;
-    readonly surahNameEnglish : string;
+    readonly surahNameTranslation : string;
+    readonly surahNameTransliteration  : string;
     readonly audioUrl : string;
 }

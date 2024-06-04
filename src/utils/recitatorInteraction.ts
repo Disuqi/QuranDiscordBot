@@ -39,21 +39,19 @@ export class RecitatorInteraction
             });
         this.recitator.addOnRecitationFailedListener((recitation) => 
             {
-                this.notifier.edit(`Failed to play ${recitation.surahNameTransliterated} - ${recitation.reciterName}`);
+                this.notifier.edit(`Failed to play ${recitation.surahNameTranslation} - ${recitation.reciterName}`);
                 this.recitator.next();
             });
     }
 
     public async updateRecitatorInteraction()
     {
-        // let imagePath = './assets/reciters/' + recitation.reciterId + '.jpg';
-        // if(!fs.existsSync(imagePath)) imagePath = "./assets/no-image.jpg";
-        // const file = new AttachmentBuilder(imagePath);
-        // file.setName('reciter.jpg');
-
         const recitationEmbed = UIManager.getRecitationEmbed(this.recitator.queue, this.recitator.queueIndex);
-        const actionRow = UIManager.getRecitatorActionRow();
-        await this.interaction.editReply({content: "", embeds: [recitationEmbed], components: [actionRow]});
+        if(recitationEmbed)
+        {
+            const actionRow = UIManager.getRecitatorActionRow();
+            await this.interaction.editReply({content: "", embeds: [recitationEmbed], components: [actionRow]});
+        }
     }
 
     public async updateQueueMessage()
@@ -73,7 +71,7 @@ export class RecitatorInteraction
             const recitation = queue[i];
             if(i == index)
                 content += `:loud_sound: `;
-            content += `${i + 1}. ${recitation.surahNameTransliterated} - ${recitation.reciterName}\n`; 
+            content += `${i + 1}. ${recitation.surahNameTransliteration } - ${recitation.reciterName}\n`; 
         }
         await this.queueMessage.edit(content);
     }
